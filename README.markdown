@@ -10,3 +10,7 @@ Posts:
 writen in markdown
 can have metadata
 can have tags
+
+## How to make it work
+
+find posts/ -t file | perl be.pl

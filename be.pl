@@ -7,6 +7,7 @@ use Template;
 my %config = (
 	metadata_end_marker => '-->',
 	metadata_begin_marker => '<!---',
+	post_filename_template => 'pXX.html', # replce XX for waht u want
 );
 
 sub InputIterator {
@@ -62,13 +63,43 @@ sub DateToNumber {
 }
 
 # Build a list of posts
-my @posts = Iterator::iterToList( 
-					Iterator::iMap { ReadPost $_[0] }->(InputIterator));
+#my @posts = Iterator::iToList( 
+#					Iterator::iMap { ReadPost $_[0] }->(InputIterator));
 
 # sort them by date most recent first
-say Dumper( sort { DateToNumber($$a{date}) cmp DateToNumber($$b{date}) }
-	@posts );
+#say Dumper( sort { DateToNumber($$a{date}) cmp DateToNumber($$b{date}) }
+#	@posts );
 
+sub PostsTemplatesIterator {
+	# As the first and the last post are special in the sences that they don't
+	# have a previos and posterior post respectively, I create this iterator that
+	# makes the last and first post special.
+	# The Pourpose of this iterator is to make a list of hashes to be merged with
+	# the other information about the post.
+
+	my $previous = undef;
+	my $counter = 0;
+
+	return Iterator->new( sub {
+		my $ret = {};
+		if ( defined($previous) ) { # Just for the first one
+			$$previous{Next} = $ret;
+			$$ret{Previous} = $previous;
+		} else {
+			$$ret{Previous} = undef;
+		}
+
+		$$ret{name} = $config{post_filename_template} =~ s/XX/$counter/r;
+		$counter++;
+
+		$previous = $ret;
+		return $ret;
+	});
+	
+}
+
+say Dumper( Iterator::iToList Iterator::iTake(4)->(PostsTemplatesIterator()));
+exit;
 # some useful options (see below for full list)
 my $config = {
     INCLUDE_PATH => 'templates',  # or list ref
