@@ -62,14 +62,6 @@ sub DateToNumber {
 	return join('',@date);
 }
 
-# Build a list of posts
-#my @posts = Iterator::iToList( 
-#					Iterator::iMap { ReadPost $_[0] }->(InputIterator));
-
-# sort them by date most recent first
-#say Dumper( sort { DateToNumber($$a{date}) cmp DateToNumber($$b{date}) }
-#	@posts );
-
 sub PostsTemplatesIterator {
 	# As the first and the last post are special in the sences that they don't
 	# have a previos and posterior post respectively, I create this iterator that
@@ -82,10 +74,14 @@ sub PostsTemplatesIterator {
 
 	return Iterator->new( sub {
 		my $ret = {};
-		if ( defined($previous) ) { # Just for the first one
+		say "--";
+		say "PRE->$previous";
+		say "RET->$ret";
+		say "--";
+		if ( defined($previous) ) { 
 			$$previous{Next} = $ret;
 			$$ret{Previous} = $previous;
-		} else {
+		} else {	# Just for the first one
 			$$ret{Previous} = undef;
 		}
 
@@ -98,29 +94,57 @@ sub PostsTemplatesIterator {
 	
 }
 
-say Dumper( Iterator::iToList Iterator::iTake(4)->(PostsTemplatesIterator()));
-exit;
+# Build a list of posts
+# sort them by date most recent first
+my @posts = sort { DateToNumber($$a{date}) cmp DateToNumber($$b{date}) } @{Iterator::iToList( 
+					Iterator::iMap { ReadPost $_[0] }->(InputIterator))};
+
+my $posts = (Iterator::iToList Iterator::iZipWith { 
+		my ($ha, $hb) = @_;
+		say "IN->$ha";
+		say "HB->$hb";
+		say "HBP->".$hb->{Previous};
+		for my $key ( keys %{$hb} ) {
+			warn "Duplicated key" if (exists $$ha{$key});
+			$$ha{$key} = $$hb{$key};
+		}
+		say "OUT->$ha";
+		return $ha;
+	}->( 
+		sub { Iterator::is_empty($_[1]) } #stop when posts are depleted
+	)->(PostsTemplatesIterator(), Iterator::iterList(\@posts)));
+
+# Make sure the last post has undef Next (Dirty trick alert)
+$$posts[-1]->{Next} = undef;
+
+foreach my $post ( @{$posts} ) {
+	say Dumper($post);
+	#say "T->".$post;
+	#say "P->".$post->{Previous};
+	#say "N->".$post->{Next};
+}
+
 # some useful options (see below for full list)
-my $config = {
-    INCLUDE_PATH => 'templates',  # or list ref
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 1,               # cleanup whitespace
-	 #PRE_PROCESS  => 'header',        # prefix each template
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-};
-
-# create Template object
-my $template = Template->new($config);
-
-# define template variables for replacement
-my $vars = {
-	Title => 'This is the title',
-};
-
-# specify input filename, or file handle, text reference, etc.
-my $input = 'post.tt';
-
-# process input template, substituting variables
-$template->process($input, $vars)
-    || die $template->error();
-
+#my $config = {
+#    INCLUDE_PATH => 'templates',  # or list ref
+#    INTERPOLATE  => 1,               # expand "$var" in plain text
+#    POST_CHOMP   => 1,               # cleanup whitespace
+#	 #PRE_PROCESS  => 'header',        # prefix each template
+#    EVAL_PERL    => 1,               # evaluate Perl code blocks
+#};
+#
+## create Template object
+#my $template = Template->new($config);
+#
+## define template variables for replacement
+#my $vars = {
+#	Title => 'This is the title',
+#};
+#
+## specify input filename, or file handle, text reference, etc.
+#my $input = 'post.tt';
+#
+## process input template, substituting variables
+#$template->process($input, $vars)
+#    || die $template->error();
+#
