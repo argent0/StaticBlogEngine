@@ -1,6 +1,20 @@
-[% Title %]
+# [% Title %]
 
 This is template text
 
-[% Previous %]
-[% Next %]
+This the beginning of the real content.
+...
+
+[% Content %]
+
+...
+This is the end of the real content.
+
+Entrada anterior:
+[% Previous.Title %]
+
+Entrada Siguiente:
+[% Next.Title %]
+
+--- --- --- --- --- --- --- --- ---
+
