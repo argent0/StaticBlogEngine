@@ -3,3 +3,4 @@ Functional
 testBlog/Functional
 testBlog/be.pl
 TASKS
+testBlog/out/*

@@ -1,20 +1,14 @@
-# [% Title %]
+[% INCLUDE header.tt %]
+[% navigation_bar_position = "top" %]
+[% INCLUDE navigation.tt %]
+<div class="post">
 
-This is template text
-
-This the beginning of the real content.
-...
+<h1> [% Title %] </h1>
 
 [% Content %]
 
-...
-This is the end of the real content.
+</div> <!-- class="post"-->
 
-Entrada anterior:
-[% Previous.Title %]
-
-Entrada Siguiente:
-[% Next.Title %]
-
---- --- --- --- --- --- --- --- ---
-
+[% navigation_bar_position = "bottom" %]
+[% INCLUDE navigation.tt %]
+[% INCLUDE footer.tt %]

@@ -1,0 +1,7 @@
+Contents:
+
+[% FOREACH post IN Posts %]
+
+	<li> [% post %] </li>
+
+[% END %]

@@ -1,0 +1,77 @@
+.main {
+	padding-top:100px;
+	padding-bottom:100px;
+	padding-right:50px;
+	padding-left:50px;
+	background-color:#77ccff;
+	border-width:0px;
+}
+
+#topbar {
+	background-color:#00aa55;
+	width:100%;
+	border-radius:10px;
+}
+
+#title {
+	text-decoration:none;
+	color:#111111;
+	/*line-height:6pt;*/
+	font-family:"Lucida Console";
+}
+
+.logo a {
+	display:block;
+	margin-left:50px;
+	height:64px;
+}
+
+.logo a:link		{ text-decoration:none; color:#111111} /* Se puede hacer en una sola linea ?*/
+.logo a:visited	{ text-decoration:none; color:#111111}
+.logo a:hover	{ text-decoration:none; color:#111111}
+.logo a:active	{ text-decoration:none; color:#111111}
+
+.post {
+	padding-top:100px;
+	padding-bottom:100px;
+	padding-right:50px;
+	padding-left:50px;
+	background-color:#eeeeee;
+}
+
+.post p {
+	margin-left:50px;
+}
+
+.navigation {
+	background-color:#00aa55;
+	height:24pt;
+}
+
+#top.navigation {
+	border-top-left-radius:10px;
+	border-top-right-radius:10px;
+}
+
+#bottom.navigation {
+	border-bottom-left-radius:10px;
+	border-bottom-right-radius:10px;
+}
+
+.navigation ul {
+	list-style-type:none;
+	margin:0;
+	padding:0;
+}
+
+.navigation li {
+	display: inline;
+}
+
+.navigation #next {
+	float:right;
+}
+
+.navigation #prev {
+	float:left;
+}

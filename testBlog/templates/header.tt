@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<!-- vim: ft=html 
+-->
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="styles/styles.css"/>
+		<title> [% Title %] </title>
+	</head>
+<body>
+	<div class="main">
+		<div id="header">
+			<div id="topbar">
+				<div class="logo">
+					<h1> <a href="index.html">Aner's Blog</a> </h1>
+				</div> <!-- logo-->
+			</div> <!--topbar-->
+		</div>
+		

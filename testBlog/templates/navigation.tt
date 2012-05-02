@@ -1,0 +1,18 @@
+<div class="navigation" id=[% navigation_bar_position %] >
+<ul>
+
+	[% IF Previous %]
+	<li id="prev"> Entrada anterior:
+	<a href="[% Previous.output_filename %]"> [% Previous.Title %] </a>
+	</li>
+	[% END %]
+
+	[% IF Next %]
+	<li id="next">
+	Entrada siguiente:
+	<a href="[% Next.output_filename %]"> [% Next.Title %] </a>
+	</li>
+	[% END %]
+</ul>
+
+</div> <!-- navigation -->

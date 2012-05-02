@@ -3,11 +3,18 @@ use Functional::Iterator;
 use Time::Local;
 use Data::Dumper;
 use Template;
+use HTML::Entities;
+use Encode;
 
-my %config = (
+my %be_config = (
 	metadata_end_marker => '-->',
 	metadata_begin_marker => '<!---',
 	post_filename_template => 'pXX.html', # replce XX for waht u want
+	contents_html_filename => 'contents.html',
+	post_template => 'post.tt',
+	contents_template => 'content.tt',
+	output_path	=> 'out',
+	entities_to_encode => "áéíóúÁÉÍÓÚñÑ",
 );
 
 sub InputIterator {
@@ -31,14 +38,16 @@ sub ReadPost {
 
 	while(my $line = <$fh>) {
 		chomp $line;
-		last if $line eq $config{metadata_end_marker};
-		next if $line eq $config{metadata_begin_marker};
+		$line = encode_entities(decode('utf-8',$line),
+			$be_config{entities_to_encode});
+		last if $line eq $be_config{metadata_end_marker};
+		next if $line eq $be_config{metadata_begin_marker};
 		my $expr = Parse($line);
 		push @$aret, ( $$expr[0] => $$expr[1] );
 	}
 	close $fh;
 
-	push @$aret, ( Filename => $filename );
+	push @$aret, ( input_filename => $filename );
 
 	my %ret = @$aret;
 
@@ -58,7 +67,8 @@ sub Parse {
 }
 
 sub DateToNumber {
-	my @date = split /\//, shift;
+	my $date = shift;
+	my @date = split /\//, $date;
 	return join('',@date);
 }
 
@@ -81,7 +91,7 @@ sub PostsTemplatesIterator {
 			$$ret{Previous} = undef;
 		}
 
-		$$ret{name} = $config{post_filename_template} =~ s/XX/$counter/r;
+		$$ret{output_filename} = $be_config{post_filename_template} =~ s/XX/$counter/r;
 		$counter++;
 
 		$previous = $ret;
@@ -92,7 +102,7 @@ sub PostsTemplatesIterator {
 
 # Build a list of posts
 # sort them by date most recent first
-my @posts = sort { DateToNumber($$a{date}) cmp DateToNumber($$b{date}) } @{Iterator::iToList( 
+my @posts = sort { DateToNumber($a->{Date}) cmp DateToNumber($b->{Date}) } @{Iterator::iToList( 
 					Iterator::iMap { ReadPost $_[0] }->(InputIterator))};
 
 my $posts = (Iterator::iToList Iterator::iZipWith { 
@@ -109,42 +119,37 @@ my $posts = (Iterator::iToList Iterator::iZipWith {
 # Make sure the last post has undef Next (Dirty trick alert)
 $$posts[-1]->{Next} = undef;
 
-#foreach my $post ( @{$posts} ) {
-#	say Dumper($post);
-#}
-
 # some useful options (see below for full list)
 my $config = {
     INCLUDE_PATH => 'templates',  # or list ref
     INTERPOLATE  => 1,               # expand "$var" in plain text
     POST_CHOMP   => 1,               # cleanup whitespace
-	 #PRE_PROCESS  => 'header',        # prefix each template
     EVAL_PERL    => 1,               # evaluate Perl code blocks
+	 OUTPUT_PATH	=> $be_config{output_path},
 };
 
 # create Template object
 my $template = Template->new($config);
 
-# define template variables for replacement
-#my $vars = {
-#	Title => 'This is the title',
-#};
-
-# specify input filename, or file handle, text reference, etc.
-my $input = 'post.tt';
-#
-# process input template, substituting variables
-#$template->process($input, $vars)
-#    || die $template->error();
-#
-
-Iterator::iFold {
+# Generate the html posts.
+# And returns an array with the information to make an index.
+my $titles_for_the_index = Iterator::iFold {
 	# Add the content of the post
-	$_[1]->{Content} = join '', @{ReadPostContent($_[1]->{Filename})};
-	$template->process($input, $_[1]) ||
+	$_[1]->{Content} = join '', @{ReadPostContent($_[1]->{input_filename})};
+	say "OUT->$_[1]->{output_filename}";
+	$template->process($be_config{post_template}, $_[1],$_[1]->{output_filename}) ||
 		die $template->error().Dumper($_[1]);  
-	return undef;
-	}->(undef)->( Iterator::iterList $posts );
+	push @{$_[0]}, $_[1]->{Title};
+	return $_[0];
+	}->([])->( Iterator::iterList $posts );
+
+# Generates the contents page
+$template->process($be_config{contents_template},
+	{ Posts => $titles_for_the_index },
+	$be_config{contents_html_filename} );
+
+
+say Dumper($titles_for_the_index);
 
 sub ReadPostContent {
 	# Reads the content of the post. Literaly it reads all the file and returns
@@ -154,16 +159,10 @@ sub ReadPostContent {
 	open(my $fh, "<", $filename)
 		or die "Can't open < $filename";
 
-	#while(my $line = <$fh>) {
-	#	chomp $line;
-	#	last if $line eq $config{metadata_end_marker};
-	#	next if $line eq $config{metadata_begin_marker};
-	#	my $expr = Parse($line);
-	#	push @$aret, ( $$expr[0] => $$expr[1] );
-	#}
-
 	my @lines;
 	while ( my $line = <$fh> ) {
+		$line =
+		encode_entities(decode('utf-8',$line),$be_config{entities_to_encode});
 		push @lines, $line;
 	}
 
