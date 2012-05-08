@@ -1,4 +1,6 @@
+#!/usr/bin/env perl
 use v5.14;
+use warnings;
 use Functional::Iterator;
 use Time::Local;
 use Data::Dumper;
@@ -7,19 +9,37 @@ use HTML::Entities;
 use Encode;
 
 my %be_config = (
-	metadata_end_marker => '-->',
-	metadata_begin_marker => '<!---',
-	post_filename_template => 'pXX.html', # replce XX for waht u want
-	contents_html_filename => 'contents.html',
-	post_template => 'post.tt',
-	contents_template => 'content.tt',
-	output_path	=> 'out',
-	entities_to_encode => "áéíóúÁÉÍÓÚñÑ",
+	metadata_end_marker		=> '-->',
+	metadata_begin_marker	=> '<!---',
+	# the patch where to find templates
+	templates_path 			=> 'templates',
+	# file where the post template is located
+	post_template 				=> 'post.tt',
+	# replces XX for a number
+	post_filename_template	=> 'pXX.html',
+	# where to store the table of contents
+	contents_template 		=> 'content.tt',
+	contents_html_filename	=> 'contents.html',
+	# Where to place the final result
+	output_path					=> 'out',
+	# Html encode this characters
+	entities_to_encode 		=> "áéíóúÁÉÍÓÚñÑ",
+	# How to sort posts
+	posts_sorting_criteria	=> 
+		sub { DateToNumber($_[0]->{Date}) cmp DateToNumber($_[1]->{Date}) },
+	# Checks to make on each post after reading metadata.
+	post_checking_routine => 
+		sub {
+			# Checks that posts are well formed
+			my $post = shift;
+			warn qq{WARNING: Missing Date metadata at file }.$post->{input_filename}
+				if !(exists $post->{Date});
+		},
 );
 
 sub InputIterator {
 	return Iterator->new ( sub {
-		return Iterator::empty() unless my $line = <>;
+		return Iterator::empty() unless defined(my $line = <>);
       chomp $line;
       return $line;
 	});
@@ -50,6 +70,9 @@ sub ReadPost {
 	push @$aret, ( input_filename => $filename );
 
 	my %ret = @$aret;
+
+	# Check the post according to configuration provided criteria.
+	$be_config{post_checking_routine}->(\%ret);
 
 	return \%ret;
 
@@ -102,8 +125,12 @@ sub PostsTemplatesIterator {
 
 # Build a list of posts
 # sort them by date most recent first
-my @posts = sort { DateToNumber($a->{Date}) cmp DateToNumber($b->{Date}) } @{Iterator::iToList( 
-					Iterator::iMap { ReadPost $_[0] }->(InputIterator))};
+my @posts = 
+	sort {
+		&{$be_config{posts_sorting_criteria}}($a,$b) }
+		@{Iterator::iToList(Iterator::iMap { ReadPost $_[0] }->(InputIterator))};
+
+#say Dumper(@posts);
 
 my $posts = (Iterator::iToList Iterator::iZipWith { 
 		my ($ha, $hb) = @_;
@@ -121,7 +148,7 @@ $$posts[-1]->{Next} = undef;
 
 # some useful options (see below for full list)
 my $config = {
-    INCLUDE_PATH => 'templates',  # or list ref
+    INCLUDE_PATH => $be_config{templates_path},  # or list ref
     INTERPOLATE  => 1,               # expand "$var" in plain text
     POST_CHOMP   => 1,               # cleanup whitespace
     EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -147,9 +174,6 @@ my $titles_for_the_index = Iterator::iFold {
 $template->process($be_config{contents_template},
 	{ Posts => $titles_for_the_index },
 	$be_config{contents_html_filename} );
-
-
-say Dumper($titles_for_the_index);
 
 sub ReadPostContent {
 	# Reads the content of the post. Literaly it reads all the file and returns
